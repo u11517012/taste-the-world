@@ -254,6 +254,48 @@
     .passport-header, .book-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #D4AF37; padding-bottom: 8px; }
     .passport-grid, .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; height: 340px; overflow-y: auto; padding: 5px; }
 
+    /* 護照圓形徽章格與圓形圖章設計 */
+    .stamp-slot {
+      background: #FFFDF7; border: 2px dashed #C8B29B; border-radius: 14px; padding: 12px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s ease; position: relative;
+    }
+    .stamp-slot:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+      border-color: var(--gold);
+    }
+
+    /* 圓形精緻徽章圖示 */
+    .badge-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center;
+      position: relative; transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    /* 已通關：亮金光芒圓形徽章 */
+    .badge-circle.unlocked {
+      background: radial-gradient(circle, #FFFDF0 30%, #FFE082 100%);
+      border: 4px double #D4AF37;
+      outline: 2px solid #B38700;
+      outline-offset: -6px;
+      font-size: 38px;
+    }
+    
+    /* 未解鎖：深灰質感鎖頭圓章 */
+    .badge-circle.locked {
+      background: #E0E0E0;
+      border: 3px dashed #999;
+      color: #777;
+      font-size: 26px;
+      filter: grayscale(0.8);
+    }
+
+    .badge-click-hint {
+      font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 4px; opacity: 0.9;
+    }
+
     /* 角色選擇專用樣式 */
     .character-modal-card {
       background: #FFFDF7; border: 4px solid var(--gold); border-radius: 18px;
@@ -275,16 +317,6 @@
       background: #f9f9f9;
     }
 
-    .stamp-slot {
-      background: #FFFDF7; border: 2px dashed #C8B29B; border-radius: 12px; padding: 12px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .stamp-mark {
-      width: 65px; height: 65px; border-radius: 50%; border: 3px double var(--red); color: var(--red);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; transform: rotate(-12deg); font-size: 10px;
-    }
-    .stamp-mark.michelin { border-color: #D4AF37; color: #B38700; background: rgba(212, 175, 55, 0.1); }
-
     .badge-card { background: #FFF; border: 2px solid #E2D4C9; border-radius: 12px; padding: 12px; text-align: center; position: relative; }
     .badge-card.locked { background: #EAE3DC; border-style: dashed; }
     .badge-card.locked .badge-icon { filter: grayscale(1) opacity(0.25); }
@@ -305,6 +337,37 @@
     .clear-tag.done { background: #DCFCE7; color: var(--green); }
     .clear-tag.none { background: #E2E8F0; color: #64748B; }
     .clear-tag.locked { background: #CBD5E1; color: #94A3B8; }
+
+    /* 國家專屬徽章解鎖動畫彈窗樣式 */
+    .badge-unlock-card {
+      background: linear-gradient(135deg, #FFFDF7 0%, #FFF3D6 100%);
+      border: 5px solid var(--gold); border-radius: 24px; padding: 30px;
+      width: 420px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      position: relative; overflow: hidden;
+      animation: badgePopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes badgePopUp {
+      0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+      70% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .badge-hero-icon {
+      font-size: 72px; margin: 15px 0; display: inline-block;
+      animation: badgePulse 1.8s infinite ease-in-out;
+      filter: drop-shadow(0 6px 12px rgba(242, 169, 59, 0.4));
+    }
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15) rotate(5deg); }
+    }
+    .confetti-particle {
+      position: absolute; width: 10px; height: 10px; border-radius: 3px;
+      animation: confettiFall 2.5s ease-out infinite; pointer-events: none;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(350px) rotate(720deg); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -390,10 +453,10 @@
           <div class="target-text-box" id="targetDisplay">Beef Noodle Soup</div>
           <p id="translation" style="font-size: 13px; color: #666; margin-bottom: 10px;">「牛肉麵」</p>
 
-          <input type="text" class="input-box" id="typingInput" placeholder="請在此開始打字..." oninput="handleTyping()" autofocus autocomplete="off">
+          <input type="text" class="input-box" id="typingInput" placeholder="直接打字開始挑戰！" oninput="handleTyping()" autofocus autocomplete="off">
         </div>
 
-        <div style="font-size: 11px; color: #777;">Tip: 打錯字會觸發提示音並迅速校正！</div>
+        <div style="font-size: 11px; color: #777;">Tip: 無需滑鼠點擊，已為您自動聚焦鍵盤！</div>
       </div>
     </div>
 
@@ -418,9 +481,33 @@
     <div class="passport-book">
       <span class="close-modal" onclick="closePassportModal()">&times;</span>
       <div class="passport-header">
-        <div style="font-weight:bold;">📘 環球航線通關護照</div>
+        <div style="font-weight:bold;">📘 環球航線通關護照 (點擊圖章查看美食介紹)</div>
       </div>
       <div class="passport-grid" id="passportGrid"></div>
+    </div>
+  </div>
+
+  <!-- 徽章美食特色中文介紹 Modal -->
+  <div class="modal-overlay" id="badgeDetailModal" style="z-index: 28;">
+    <div class="passport-book" style="width: 440px; height: auto; text-align: center; padding: 25px 30px;">
+      <span class="close-modal" onclick="closeBadgeDetailModal()">&times;</span>
+      
+      <div style="font-size:11px; color:var(--gold); font-weight:bold; text-transform:uppercase; letter-spacing:1px;" id="detailCountryTitle">🇹🇼 台灣美食榮譽勳章</div>
+      
+      <!-- 圓形徽章展示區 -->
+      <div style="display:flex; justify-content:center; margin: 15px 0;">
+        <div class="badge-circle unlocked" id="detailBadgeCircle" style="width: 100px; height: 100px; font-size: 52px; box-shadow: 0 8px 20px rgba(242,169,59,0.35);">
+          🧋
+        </div>
+      </div>
+
+      <h3 id="detailBadgeName" style="color:var(--navy); font-size: 20px; margin-bottom: 8px;">珍珠奶茶與牛肉麵</h3>
+      
+      <div style="background:#FFF; border:1px solid #E2D4C9; border-radius:12px; padding:14px; text-align:left; font-size:13px; color:#444; line-height:1.6; margin-bottom: 18px;" id="detailFoodIntro">
+        台灣美食享譽國際，經典的 Q 彈珍珠奶茶搭配濃郁的高湯牛肉麵，完美融合在地街頭小吃文化與職人燉煮工藝，是夜市與美食饗宴的代表作。
+      </div>
+
+      <button onclick="closeBadgeDetailModal()" style="background:var(--gold); border:none; padding:8px 24px; font-weight:bold; border-radius:15px; cursor:pointer; color:var(--navy); font-size:13px;">收下徽章關閉</button>
     </div>
   </div>
 
@@ -491,6 +578,22 @@
     </div>
   </div>
 
+  <!-- 國家特色徽章獲得動畫 Modal -->
+  <div class="modal-overlay" id="badgeUnlockModal" style="z-index: 30;">
+    <div class="badge-unlock-card" id="badgeUnlockCard">
+      <div id="confettiContainer"></div>
+      <h3 style="color:var(--passport-cover); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">🎉 國家通關榮譽徽章解鎖！</h3>
+      
+      <div style="display:flex; justify-content:center; margin: 10px 0;">
+        <div class="badge-circle unlocked" id="unlockBadgeIcon" style="width:110px; height:110px; font-size:60px; box-shadow:0 10px 25px rgba(242, 169, 59, 0.5);">🧋</div>
+      </div>
+
+      <h2 id="unlockBadgeTitle" style="color:var(--navy); font-size: 22px; margin-bottom: 6px;">🇹🇼 寶島珍奶榮譽徽章</h2>
+      <p id="unlockBadgeDesc" style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px;">恭喜您完美通過台灣三大主線美食挑戰，解鎖下一站航線！</p>
+      <button onclick="closeBadgeUnlockModal()" style="background:var(--gold); border:none; padding:10px 30px; font-weight:bold; border-radius:20px; cursor:pointer; font-size:14px; color:var(--navy); box-shadow: 0 4px 10px rgba(0,0,0,0.15);">太棒了，繼續旅程！</button>
+    </div>
+  </div>
+
   <!-- 結算 Modal -->
   <div class="modal-overlay" id="resultModal">
     <div class="passport-book" style="width: 360px; height: auto; text-align: center;">
@@ -558,7 +661,6 @@
 
       const char = charactersList[selectedCharId];
 
-      // 更新頭像圖片 src
       document.getElementById('headerAvatarSprite').src = char.file;
       document.getElementById('guideAvatarSprite').src = char.file;
 
@@ -589,16 +691,56 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.15);
     }
 
-    // 國家與地圖數據
+    // 國家數據與特色美食詳細介紹（中文）
     const worldData = [
-      { id: 'taiwan', name: '台灣', code: 'tw', continent: 'asia', lon: 121.0, lat: 23.5, unlocked: true },
-      { id: 'japan', name: '日本', code: 'jp', continent: 'asia', lon: 138.2, lat: 36.2, unlocked: false },
-      { id: 'korea', name: '韓國', code: 'kr', continent: 'asia', lon: 127.7, lat: 35.9, unlocked: false },
-      { id: 'thailand', name: '泰國', code: 'th', continent: 'asia', lon: 100.5, lat: 13.7, unlocked: false },
-      { id: 'france', name: '法國', code: 'fr', continent: 'europe', lon: 2.2, lat: 46.2, unlocked: false },
-      { id: 'italy', name: '義大利', code: 'it', continent: 'europe', lon: 12.5, lat: 41.8, unlocked: false },
-      { id: 'usa', name: '美國', code: 'us', continent: 'north-america', lon: -95.7, lat: 37.0, unlocked: false },
-      { id: 'brazil', name: '巴西', code: 'br', continent: 'south-america', lon: -51.9, lat: -14.2, unlocked: false }
+      { 
+        id: 'taiwan', name: '台灣', code: 'tw', continent: 'asia', lon: 121.0, lat: 23.5, unlocked: true, 
+        badgeIcon: '🧋', badgeTitle: '🇹🇼 寶島珍奶與牛肉麵', 
+        badgeDesc: '成功掌握珍珠奶茶與牛肉麵文化，獲得台灣代表美食認證！',
+        foodIntro: '台灣享譽國際的靈魂小吃「珍珠奶茶」，以濃郁奶茶搭配 Q 彈黑糖珍珠；加上醇厚濃郁的清燉與紅燒牛肉麵，展現了台灣豐富多元的街頭與家常美食工藝。'
+      },
+      { 
+        id: 'japan', name: '日本', code: 'jp', continent: 'asia', lon: 138.2, lat: 36.2, unlocked: false, 
+        badgeIcon: '🍣', badgeTitle: '🇯🇵 壽司與職人拉麵', 
+        badgeDesc: '領悟日式極致匠人精神，完美的拉麵與壽司終極傳承者！',
+        foodIntro: '日本料理講究極致精神與新鮮原味。精緻捏製的正宗握壽司與長時間燉煮濃郁高湯的豚骨拉麵，完美融合傳統文化與現代職人手藝。'
+      },
+      { 
+        id: 'korea', name: '韓國', code: 'kr', continent: 'asia', lon: 127.7, lat: 35.9, unlocked: false, 
+        badgeIcon: '🍲', badgeTitle: '🇰🇷 韓式泡菜與五花肉', 
+        badgeDesc: '征服泡菜與韓式燒肉，達成正宗大韓美食狂熱認證！',
+        foodIntro: '韓國經典發酵美食「泡菜」發酵酸辣層次豐富；搭配炭火直烤發出滋滋聲響的厚切韓式五花肉，呈現極具熱情與豪邁的宮廷與庶民美味。'
+      },
+      { 
+        id: 'thailand', name: '泰國', code: 'th', continent: 'asia', lon: 100.5, lat: 13.7, unlocked: false, 
+        badgeIcon: '🥣', badgeTitle: '🇹🇭 泰式冬蔭功酸辣湯', 
+        badgeDesc: '掌握香草與酸辣完美平衡，東南亞南洋熱情美饌專家！',
+        foodIntro: '泰國國寶級湯品「冬蔭功（酸辣蝦湯）」，運用檸檬葉、香茅、南薑與新鮮大蝦精心熬煮，酸辣交織、香氣四溢，道出熱帶南洋的美食風情。'
+      },
+      { 
+        id: 'france', name: '法國', code: 'fr', continent: 'europe', lon: 2.2, lat: 46.2, unlocked: false, 
+        badgeIcon: '🥐', badgeTitle: '🇫🇷 米其林金黃可頌', 
+        badgeDesc: '精通頌餅與頂級精緻料理，獲得星級廚神之榮譽認證！',
+        foodIntro: '法國料理是世界精緻飲食的代名詞。外皮香酥、內部層次分明富含奶油香氣的法式可頌，搭配高雅簡潔的極致法餐工藝，給予味蕾頂級奢華享受。'
+      },
+      { 
+        id: 'italy', name: '義大利', code: 'it', continent: 'europe', lon: 12.5, lat: 41.8, unlocked: false, 
+        badgeIcon: '🍕', badgeTitle: '🇮🇹 拿坡里手工披薩', 
+        badgeDesc: '手工披薩與義大利麵的最佳演繹，感受地中海陽光風味！',
+        foodIntro: '義大利料理充滿地中海陽光的熱情。正宗窯烤拿坡里披薩餅皮香 Q，搭配濃郁莫札瑞拉起司與新鮮羅勒，詮釋簡單卻令人驚艷的食材原味。'
+      },
+      { 
+        id: 'usa', name: '美國', code: 'us', continent: 'north-america', lon: -95.7, lat: 37.0, unlocked: false, 
+        badgeIcon: '🍔', badgeTitle: '🇺🇸 美式牛肉漢堡堡', 
+        badgeDesc: '掌握美式美饌與美式靈魂，解鎖好萊塢美饌派對！',
+        foodIntro: '美式飲食風格代表「多汁牛肉漢堡」，厚實飽滿的牛肉漢堡排搭配融化起司與新鮮蔬菜，盡顯美式文化經典、直爽與豐沛的美食精神。'
+      },
+      { 
+        id: 'brazil', name: '巴西', code: 'br', continent: 'south-america', lon: -51.9, lat: -14.2, unlocked: false, 
+        badgeIcon: '🥩', badgeTitle: '🇧🇷 桑巴炙烤巴西窯烤', 
+        badgeDesc: '沉浸於巴西窯烤的熱情狂歡，榮獲南美洲美饌巡禮終極桂冠！',
+        foodIntro: '巴西經典 Churrasco 窯烤肉，將頂級牛肉塊串於鐵籤上經大火慢烤，外酥內嫩多汁，充分展現南美洲狂歡節般的盛情熱帶風貌。'
+      }
     ];
 
     const continentViews = {
@@ -732,7 +874,7 @@
 
         let statusText = '';
         if (allCleared) statusText = '★ 大滿貫';
-        else if (mainCleared) statusText = '✓ 已完成';
+        else if (mainCleared) statusText = '✓ 已通關';
         else if (isPlayable) statusText = '進行中';
 
         pin.innerHTML = `
@@ -761,7 +903,7 @@
         } else if (!prog.stage2) {
           updatePilotGuide(`太棒了！【${targetC.name}】第 1 關已過，繼續挑戰第 2 關！`);
         } else if (!prog.stage3) {
-          updatePilotGuide(`只差臨門一腳！完成【${targetC.name}】第 3 關就能解鎖下一個國家！`);
+          updatePilotGuide(`只差臨門一腳！完成【${targetC.name}】第 3 關就能解鎖國家專屬徽章！`);
         }
       } else {
         updatePilotGuide("恭喜您！全球美食航線已全數完美通關！您是頂級美食廚神飛行員！");
@@ -840,7 +982,7 @@
       if (prog.stage2) mainClearedCount++;
       if (prog.stage3) mainClearedCount++;
 
-      document.getElementById('mainProgressLabel').innerText = `主線進度：${mainClearedCount} / 3 (需完成全部 3 關解鎖下一國)`;
+      document.getElementById('mainProgressLabel').innerText = `主線進度：${mainClearedCount} / 3 (需完成全部 3 關解鎖國家徽章與下一國)`;
 
       // 第 1 關
       const btn1 = document.getElementById('btn-stage1');
@@ -909,6 +1051,19 @@
 
     function closeModal() { document.getElementById('levelModal').style.display = 'none'; }
 
+    // 自動焦距輔助函數：確保玩家不需要滑鼠點擊即可直接輸入
+    function autoFocusInput() {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const inputEl = document.getElementById('typingInput');
+          if (inputEl) {
+            inputEl.focus();
+            inputEl.select();
+          }
+        }, 50);
+      });
+    }
+
     function startCountryMode(modeKey) {
       const prog = userProgress[currentSelectedCountry.id] || {};
 
@@ -935,6 +1090,7 @@
       
       loadItem(currentList[currentIndex]);
       startTimer();
+      autoFocusInput();
     }
 
     function loadItem(item) {
@@ -942,6 +1098,7 @@
       document.getElementById('translation').innerText = `「${item.zh}」`;
       document.getElementById('typingInput').value = '';
       updateTargetDisplay(item.target, '');
+      autoFocusInput();
     }
 
     function updateTargetDisplay(target, inputVal) {
@@ -1038,12 +1195,19 @@
       let wpm = Math.round((totalChars / 5) / (totalTime / 60)) || 0;
 
       if (!userProgress[currentSelectedCountry.id]) userProgress[currentSelectedCountry.id] = {};
+      
+      const wasStage3AlreadyCleared = userProgress[currentSelectedCountry.id].stage3;
       userProgress[currentSelectedCountry.id][currentModeKey] = true;
 
       const prog = userProgress[currentSelectedCountry.id];
       let rewardNotice = "";
+      let isJustCompletedAllMainStages = false;
 
       if (prog.stage1 && prog.stage2 && prog.stage3) {
+        if (currentModeKey === 'stage3' && !wasStage3AlreadyCleared) {
+          isJustCompletedAllMainStages = true;
+        }
+
         const currentIdx = worldData.findIndex(c => c.id === currentSelectedCountry.id);
         if (currentIdx !== -1 && currentIdx + 1 < worldData.length) {
           rewardNotice = `🎉 恭喜通關全部 3 關主線！正式為您開啟下一個國家航線：【${worldData[currentIdx + 1].name}】！`;
@@ -1086,9 +1250,42 @@
       document.getElementById('resultTime').innerText = totalTime;
       document.getElementById('resultErrors').innerText = errorCount;
       document.getElementById('resultWPM').innerText = wpm;
-      document.getElementById('resultModal').style.display = 'flex';
+
+      if (isJustCompletedAllMainStages) {
+        showBadgeUnlockModal(currentSelectedCountry);
+      } else {
+        document.getElementById('resultModal').style.display = 'flex';
+      }
 
       updateHeaderStats();
+    }
+
+    // 觸發國家特色徽章解鎖動畫 Modal 與滿版彩帶效果
+    function showBadgeUnlockModal(country) {
+      document.getElementById('unlockBadgeIcon').innerText = country.badgeIcon || '🏆';
+      document.getElementById('unlockBadgeTitle').innerText = country.badgeTitle || `${country.name} 榮譽美食徽章`;
+      document.getElementById('unlockBadgeDesc').innerText = country.badgeDesc || `恭喜您順利完成${country.name}所有主線關卡挑戰！`;
+
+      const confettiContainer = document.getElementById('confettiContainer');
+      confettiContainer.innerHTML = '';
+      const colors = ['#F2A93B', '#E65F5C', '#2A9D8F', '#72B2D6', '#E9C46A'];
+
+      for (let i = 0; i < 35; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-particle';
+        p.style.left = `${Math.random() * 100}%`;
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDelay = `${Math.random() * 1.5}s`;
+        p.style.animationDuration = `${1.8 + Math.random() * 1.5}s`;
+        confettiContainer.appendChild(p);
+      }
+
+      document.getElementById('badgeUnlockModal').style.display = 'flex';
+    }
+
+    function closeBadgeUnlockModal() {
+      document.getElementById('badgeUnlockModal').style.display = 'none';
+      document.getElementById('resultModal').style.display = 'flex';
     }
 
     function nextStageAction() {
@@ -1115,22 +1312,56 @@
     function switchView(viewId) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById(viewId).classList.add('active');
+      if (viewId === 'gameView') {
+        autoFocusInput();
+      }
     }
 
+    // 開啟護照 Modal（展示圓形圖像徽章）
     function openPassportModal() {
       const grid = document.getElementById('passportGrid');
       grid.innerHTML = worldData.map(c => {
         const prog = userProgress[c.id] || {};
         const isPassed = prog.stage1 && prog.stage2 && prog.stage3;
+        
         return `
-          <div class="stamp-slot">
-            <div class="stamp-mark ${isPassed ? 'michelin' : ''}">${isPassed ? '★ PASSED ★' : 'LOCKED'}</div>
-            <div style="font-size:12px; font-weight:bold; margin-top:5px;">${c.name}</div>
+          <div class="stamp-slot" onclick="clickBadgeInPassport('${c.id}')">
+            <div class="badge-circle ${isPassed ? 'unlocked' : 'locked'}">
+              ${isPassed ? (c.badgeIcon || '🧋') : '🔒'}
+            </div>
+            <div style="font-size:12px; font-weight:bold; margin-top:8px; color:var(--navy);">${c.name}</div>
+            <div class="badge-click-hint">${isPassed ? '🔍 點擊看簡介' : '未解鎖'}</div>
           </div>
         `;
       }).join('');
       document.getElementById('passportModal').style.display = 'flex';
     }
+
+    // 點擊護照中的徽章，跳出中文簡介 Modal
+    function clickBadgeInPassport(countryId) {
+      const country = worldData.find(c => c.id === countryId);
+      if (!country) return;
+
+      const prog = userProgress[countryId] || {};
+      const isPassed = prog.stage1 && prog.stage2 && prog.stage3;
+
+      if (!isPassed) {
+        alert(`🔒 【${country.name}】美食徽章尚未解鎖，請先前往地圖完成該國 3 關主線任務！`);
+        return;
+      }
+
+      document.getElementById('detailCountryTitle').innerText = `${country.name} 美食榮譽勳章`;
+      document.getElementById('detailBadgeCircle').innerText = country.badgeIcon || '🧋';
+      document.getElementById('detailBadgeName').innerText = country.badgeTitle || `${country.name} 特色美食`;
+      document.getElementById('detailFoodIntro').innerText = country.foodIntro || country.badgeDesc || "無介紹資訊";
+
+      document.getElementById('badgeDetailModal').style.display = 'flex';
+    }
+
+    function closeBadgeDetailModal() {
+      document.getElementById('badgeDetailModal').style.display = 'none';
+    }
+
     function closePassportModal() { document.getElementById('passportModal').style.display = 'none'; }
 
     function openBookModal() {
